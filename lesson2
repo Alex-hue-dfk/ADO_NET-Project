@@ -1,0 +1,42 @@
+import pyodbc
+
+connection_string = (
+    "DRIVER={SQL Server};"
+    "SERVER=localhost;"
+    "DATABASE=MyTestDB;"
+    "Trusted_Connection=yes;"
+)
+
+try:
+    print("Попытка подключения к базе данных...")
+    conn = pyodbc.connect(connection_string)
+    print("Подключение успешно установлено!\n")
+
+    cursor = conn.cursor()
+
+    sql_query = "SELECT TOP 5 * FROM YourTable"
+    
+    cursor.execute(sql_query)
+
+    print("Результаты запроса:")
+    print("-" * 50)
+    
+    column_names = [column[0] for column in cursor.description]
+    print(" | ".join(column_names))
+    print("-" * 50)
+
+    for row in cursor:
+        row_data = [str(item) for item in row]
+        print(" | ".join(row_data))
+
+except pyodbc.Error as ex:
+    sqlstate = ex.args[0]
+    print(f"Произошла ошибка базы данных: {sqlstate}")
+    print(ex)
+
+finally:
+    if 'cursor' in locals() and cursor:
+        cursor.close()
+    if 'conn' in locals() and conn:
+        conn.close()
+        print("\nСоединение закрыто.")
