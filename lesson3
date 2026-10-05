@@ -1,0 +1,38 @@
+using System;
+using System.Data.SqlClient;
+
+namespace AdoNetLesson3
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string connectionString = "Server=localhost;Database=TestDB;Trusted_Connection=True;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                    Console.WriteLine("Подключение открыто");
+
+                    string sqlQuery = "SELECT Id, Name FROM Users";
+                    SqlCommand command = new SqlCommand(sqlQuery, connection);
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine($"ID: {reader["Id"]}, Name: {reader["Name"]}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Ошибка: " + ex.Message);
+                }
+            }
+            Console.ReadKey();
+        }
+    }
+}
