@@ -1,0 +1,101 @@
+using System;
+using System.Data.SqlClient;
+
+namespace AdoNetLesson4
+{
+    class Program
+    {
+        static string connectionString = "Server=localhost;Database=TestDB;Trusted_Connection=True;";
+
+        static void Main(string[] args)
+        {
+            while (true)
+            {
+                Console.WriteLine("\nМеню:");
+                Console.WriteLine("1 - Показать все продукты");
+                Console.WriteLine("2 - Добавить продукт");
+                Console.WriteLine("3 - Показать продукт по Id");
+                Console.WriteLine("0 - Выход");
+                Console.Write("Выберите действие: ");
+
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ShowAllProducts();
+                        break;
+                    case "2":
+                        AddProduct();
+                        break;
+                    case "3":
+                        ShowProductById();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("Неверный выбор.");
+                        break;
+                }
+            }
+        }
+
+        static void ShowAllProducts()
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("SELECT Id, Name, Price FROM Products", connection);
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"ID: {reader["Id"]}, Name: {reader["Name"]}, Price: {reader["Price"]}");
+                    }
+                }
+            }
+        }
+
+        static void AddProduct()
+        {
+            Console.Write("Введите название продукта: ");
+            string name = Console.ReadLine();
+            Console.Write("Введите цену: ");
+            decimal price = decimal.Parse(Console.ReadLine());
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("INSERT INTO Products (Name, Price) VALUES (@Name, @Price)", connection);
+                command.Parameters.AddWithValue("@Name", name);
+                command.Parameters.AddWithValue("@Price", price);
+                command.ExecuteNonQuery();
+                Console.WriteLine("Продукт добавлен.");
+            }
+        }
+
+        static void ShowProductById()
+        {
+            Console.Write("Введите Id продукта: ");
+            int id = int.Parse(Console.ReadLine());
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("SELECT Id, Name, Price FROM Products WHERE Id = @Id", connection);
+                command.Parameters.AddWithValue("@Id", id);
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        Console.WriteLine($"ID: {reader["Id"]}, Name: {reader["Name"]}, Price: {reader["Price"]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Продукт не найден.");
+                    }
+                }
+            }
+        }
+    }
+}
