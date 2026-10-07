@@ -1,0 +1,241 @@
+using System;
+using Microsoft.Data.SqlClient;
+
+namespace CollegeApp
+{
+    internal class Program
+    {
+        static string connectionString = "Server=localhost;Database=CollegeDB;Trusted_Connection=True;TrustServerCertificate=True;";
+
+        static void Main(string[] args)
+        {
+            bool exit = false;
+
+            while (!exit)
+            {
+                Console.Clear();
+                Console.WriteLine("=== Меню Учебного Заведения ===");
+                Console.WriteLine("1. Показать всех студентов");
+                Console.WriteLine("2. Найти студента по имени");
+                Console.WriteLine("3. Добавить группу");
+                Console.WriteLine("4. Добавить студента");
+                Console.WriteLine("0. Выход");
+                Console.Write("\nВыберите действие: ");
+
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ShowAllStudents();
+                        break;
+                    case "2":
+                        Console.Write("Введите имя для поиска: ");
+                        string name = Console.ReadLine();
+                        FindStudentByName(name);
+                        break;
+                    case "3":
+                        Console.Write("Введите название группы: ");
+                        string groupName = Console.ReadLine();
+                        AddGroup(groupName);
+                        break;
+                    case "4":
+                        Console.Write("Введите имя: ");
+                        string firstName = Console.ReadLine();
+                        Console.Write("Введите фамилию: ");
+                        string lastName = Console.ReadLine();
+                        Console.Write("Введите возраст: ");
+                        string age = Console.ReadLine();
+                        Console.Write("Введите ID группы: ");
+                        string groupId = Console.ReadLine();
+                        AddStudent(firstName, lastName, age, groupId);
+                        break;
+                    case "0":
+                        exit = true;
+                        break;
+                    default:
+                        Console.WriteLine("Неверный выбор. Нажмите любую клавишу для продолжения...");
+                        Console.ReadKey();
+                        break;
+                }
+            }
+        }
+
+        static void ShowAllStudents()
+        {
+            Console.WriteLine("\n--- Список всех студентов ---");
+
+            string query = @"
+                SELECT s.Id, s.FirstName, s.LastName, s.Age, g.Name AS GroupName 
+                FROM Students s
+                LEFT JOIN Groups g ON s.GroupId = g.Id";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (!reader.HasRows)
+                            {
+                                Console.WriteLine("Студенты не найдены.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{"ID",-5} {"Имя",-15} {"Фамилия",-15} {"Возраст",-8} {"Группа",-10}");
+                                Console.WriteLine(new string('-', 60));
+
+                                while (reader.Read())
+                                {
+                                    int id = (int)reader["Id"];
+                                    string firstName = reader["FirstName"].ToString();
+                                    string lastName = reader["LastName"].ToString();
+                                    string age = reader["Age"] != DBNull.Value ? reader["Age"].ToString() : "-";
+                                    string groupName = reader["GroupName"] != DBNull.Value ? reader["GroupName"].ToString() : "Нет группы";
+
+                                    Console.WriteLine($"{id,-5} {firstName,-15} {lastName,-15} {age,-8} {groupName,-10}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при подключении к базе данных: {ex.Message}");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для возврата в меню...");
+            Console.ReadKey();
+        }
+
+        static void FindStudentByName(string name)
+        {
+            Console.WriteLine($"\n--- Результаты поиска по имени: {name} ---");
+
+            string query = @"
+                SELECT s.Id, s.FirstName, s.LastName, s.Age, g.Name AS GroupName 
+                FROM Students s
+                LEFT JOIN Groups g ON s.GroupId = g.Id
+                WHERE s.FirstName LIKE @Name";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Name", "%" + name + "%");
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (!reader.HasRows)
+                            {
+                                Console.WriteLine("Студенты с таким именем не найдены.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{"ID",-5} {"Имя",-15} {"Фамилия",-15} {"Возраст",-8} {"Группа",-10}");
+                                Console.WriteLine(new string('-', 60));
+
+                                while (reader.Read())
+                                {
+                                    int id = (int)reader["Id"];
+                                    string firstName = reader["FirstName"].ToString();
+                                    string lastName = reader["LastName"].ToString();
+                                    string age = reader["Age"] != DBNull.Value ? reader["Age"].ToString() : "-";
+                                    string groupName = reader["GroupName"] != DBNull.Value ? reader["GroupName"].ToString() : "Нет группы";
+
+                                    Console.WriteLine($"{id,-5} {firstName,-15} {lastName,-15} {age,-8} {groupName,-10}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при выполнении поиска: {ex.Message}");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для возврата в меню...");
+            Console.ReadKey();
+        }
+
+        static void AddGroup(string name_group)
+        {
+            string query = "INSERT INTO Groups (Name) VALUES (@Name)";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Name", name_group);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            Console.WriteLine($"\nГруппа '{name_group}' успешно добавлена!");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nОшибка при добавлении группы: {ex.Message}");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для возврата в меню...");
+            Console.ReadKey();
+        }
+
+        static void AddStudent(string first_name, string last_name, string age, string group_id)
+        {
+            string query = "INSERT INTO Students (FirstName, LastName, Age, GroupId) VALUES (@FirstName, @LastName, @Age, @GroupId)";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@FirstName", first_name);
+                        command.Parameters.AddWithValue("@LastName", last_name);
+
+                        if (int.TryParse(age, out int parsedAge))
+                            command.Parameters.AddWithValue("@Age", parsedAge);
+                        else
+                            command.Parameters.AddWithValue("@Age", DBNull.Value);
+
+                        if (int.TryParse(group_id, out int parsedGroupId))
+                            command.Parameters.AddWithValue("@GroupId", parsedGroupId);
+                        else
+                            command.Parameters.AddWithValue("@GroupId", DBNull.Value);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            Console.WriteLine($"\nСтудент '{first_name} {last_name}' успешно добавлен!");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nОшибка при добавлении студента: {ex.Message}");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для возврата в меню...");
+            Console.ReadKey();
+        }
+    }
+}
