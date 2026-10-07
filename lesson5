@@ -5,7 +5,7 @@ namespace CollegeApp
 {
     internal class Program
     {
-        static string connectionString = "Server=YourServerName;Database=CollegeDB;Trusted_Connection=True;TrustServerCertificate=True;";
+        static string connectionString = "Server=localhost;Database=CollegeDB;Trusted_Connection=True;TrustServerCertificate=True;";
 
         static void Main(string[] args)
         {
@@ -46,7 +46,7 @@ namespace CollegeApp
         static void ShowAllStudents()
         {
             Console.WriteLine("\n--- Список всех студентов ---");
-            
+
             string query = @"
                 SELECT s.Id, s.FirstName, s.LastName, g.Name AS GroupName 
                 FROM Students s
